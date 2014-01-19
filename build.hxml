@@ -1,0 +1,4 @@
+-main Boot
+-neko wxcommands.n
+-cp src/
+-cp lib/
