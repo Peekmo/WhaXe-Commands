@@ -13,7 +13,6 @@ class Build
      */
     public function new()
     {
-        trace('Building dependencies');
         this.buildDependencies();
     }
 
@@ -49,29 +48,41 @@ class Build
             var libs : JsonDynamic = JsonParser.decode(content);
 
             // Get config.json from each internal bundles
-            for (i in libs['internals'].iterator()) {
-                var folder : String = Std.string(libs['internals'][i]).split('.').join('/');
-                
-                var servicesFile : String = sys.io.File.getContent('src/' + folder + '/config/services.json');
-                var services : JsonDynamic = JsonParser.decode(servicesFile);
-                this.writeServices(file, services['services']);
+            for (i in libs['externals'].iterator()) {
+                var folder : String = Std.string(libs['externals'][i]).split('.').join('/');
+                var config : String = sys.io.File.getContent('lib/' + folder + '/config/config.json');
 
-                var routingFile : String = sys.io.File.getContent('src/' + folder + '/config/routing.json');
-                var routes : JsonDynamic = JsonParser.decode(routingFile);
-                this.writeControllers(file, routes['routes']);
+                var decoded : JsonDynamic = JsonParser.decode(config);
+                for (z in decoded['services'].iterator()) {
+                    var serviceFile : String = sys.io.File.getContent('lib/' + folder + '/config/' + decoded['services'][z]);
+                    var services : JsonDynamic = JsonParser.decode(serviceFile);
+                    this.writeServices(file, services['services']);
+                }
+
+                for (z in decoded['routing'].iterator()) {
+                    var routingFile : String = sys.io.File.getContent('lib/' + folder + '/config/' + decoded['routing'][z]);
+                    var routes : JsonDynamic = JsonParser.decode(routingFile);
+                    this.writeControllers(file, routes['routes']);
+                }
             }
 
             // Get config.json from each external bundles
-            for (i in libs['externals'].iterator()) {
-                var folder : String = Std.string(libs['externals'][i]).split('.').join('/');
+            for (i in libs['internals'].iterator()) {
+                var folder : String = Std.string(libs['internals'][i]).split('.').join('/');
+                var config : String = sys.io.File.getContent('src/' + folder + '/config/config.json');
 
-                var servicesFile : String = sys.io.File.getContent('lib/' + folder + '/config/services.json');
-                var services : JsonDynamic = JsonParser.decode(servicesFile);
-                this.writeServices(file, services['services']);
+                var decoded : JsonDynamic = JsonParser.decode(config);
+                for (z in decoded['services'].iterator()) {
+                    var serviceFile : String = sys.io.File.getContent('src/' + folder + '/config/' + decoded['services'][z]);
+                    var services : JsonDynamic = JsonParser.decode(serviceFile);
+                    this.writeServices(file, services['services']);
+                }
 
-                var routingFile : String = sys.io.File.getContent('lib/' + folder + '/config/routing.json');
-                var routes : JsonDynamic = JsonParser.decode(routingFile);
-                this.writeControllers(file, routes['routes']);
+                for (z in decoded['routing'].iterator()) {
+                    var routingFile : String = sys.io.File.getContent('src/' + folder + '/config/' + decoded['routing'][z]);
+                    var routes : JsonDynamic = JsonParser.decode(routingFile);
+                    this.writeControllers(file, routes['routes']);
+                }
             }
         } catch (ex: String) {
             throw new FileNotFoundException('No bundles configuration found (' + ex.split(':')[0] +')');
